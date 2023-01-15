@@ -1,17 +1,28 @@
-// import * as cdk from 'aws-cdk-lib';
-// import { Template } from 'aws-cdk-lib/assertions';
-// import * as CdkApiLambda from '../lib/cdk-api-lambda-stack';
+import * as cdk from "aws-cdk-lib";
+import { LambdaWithAPIGatewayStack } from "../lib/lambda-with-api-stack";
+import { Template } from "aws-cdk-lib/assertions";
 
-// example test. To run these tests, uncomment this file along with the
-// example resource in lib/cdk-api-lambda-stack.ts
-test('SQS Queue Created', () => {
-//   const app = new cdk.App();
-//     // WHEN
-//   const stack = new CdkApiLambda.CdkApiLambdaStack(app, 'MyTestStack');
-//     // THEN
-//   const template = Template.fromStack(stack);
+test("snapshot test", () => {
+  const app = new cdk.App();
 
-//   template.hasResourceProperties('AWS::SQS::Queue', {
-//     VisibilityTimeout: 300
-//   });
+  // cdk.jsonをテスト時に使用したい場合
+  // const app = new cdk.App({ context: { hoge: "fuga" } });
+
+  const stack = new LambdaWithAPIGatewayStack(app, "snapshotTestStack", {
+    projectName: "snapshot-test",
+  });
+
+  // テンプレートをJSONに変換
+  const template = Template.fromStack(stack).toJSON();
+
+  // Lambdaコードの変更によるsnapshotテスト失敗を防ぐ
+  template.Parameters = {};
+  Object.values(template.Resources).forEach((resource: any) => {
+    // Codeを持つもののCodeを{}に上書き
+    if (resource?.Properties?.entry) {
+      resource.Properties.Code = {};
+    }
+  });
+
+  expect(template).toMatchSnapshot();
 });
